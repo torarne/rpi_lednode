@@ -7,6 +7,7 @@ require('time')
 require 'serialport'
 require 'ruby-growl'
 require 'redis'
+require 'json'
 
 
      $debug = false
@@ -22,6 +23,16 @@ require 'redis'
      parity = SerialPort::NONE
 
 @node_list = ["35","43"]
+
+
+def redis_publish(inn,time_part)
+        hum_array = inn.strip.split(' ')
+		origin = "jeenode_raw"
+		temp_hash = {origin: origin,descriptor: hum_array[1], payload: inn, timestamp: time_part }
+		temp_json = temp_hash.to_json
+		test = $redis.publish(origin,temp_json)
+
+end
 
 
 
@@ -70,8 +81,11 @@ end
 				if hum_array.size == 6 then
 					if hum_array[0] == "OK" then               
 						puts timestring + "," + inn.strip
+						redis_publish(inn,timestring)
+						puts "Publish ->" + inn.to_s
 					end
 				end
+
         movement_indicator = hum_array[3].to_i - ((hum_array[3].to_i >> 1) * 2)
 	if @node_list.include?(hum_array[1]) then
         if movement_indicator != 0 then
